@@ -15,8 +15,7 @@
 
   <!-- Hero -->
   <header class="hero">
-    <p class="hero-kicker reveal">Direct response · Copy · Offers</p>
-    <h1 class="headline reveal" style="--reveal-i:1">HEY. WELCOME TO MY HOME PAGE</h1>
+    <h1 class="headline reveal">HEY. WELCOME TO MY HOME PAGE</h1>
   </header>
 
   <!-- VSL -->
@@ -34,7 +33,7 @@
   <section class="section" aria-labelledby="paths-title">
     <h2 class="section-title reveal" id="paths-title">HERE'S HOW I CAN HELP</h2>
     <div class="paths">
-      <a href="#book" class="path reveal">
+      <a href="#contact" class="path reveal">
         <h3 class="path-title">CONSULTING &amp; "AGENCY"</h3>
         <p class="path-desc">
           If you're a business owner who's looking to work with me to help improve
@@ -42,7 +41,7 @@
         </p>
         <span class="path-btn">Click here to learn more</span>
       </a>
-      <a href="#book" class="path reveal" style="--reveal-i:1">
+      <a href="#contact" class="path reveal" style="--reveal-i:1">
         <h3 class="path-title">PRODUCTS &amp; COURSES</h3>
         <p class="path-desc">
           If you're a marketer or a creator looking to level up your ability to sell
@@ -96,6 +95,20 @@
       <div class="testi-row">
 
         <article class="testi-featured reveal">
+          <div class="testi-video testi-video-vertical" role="button" tabindex="0" aria-label="Play testimonial video from Kyle">
+            <video src="/assets/testimonial-kyle.mp4" playsinline preload="metadata"></video>
+            <div class="testi-video-poster" aria-hidden="true"><div class="placeholder"><div class="placeholder-label">testimonial-kyle.mp4</div></div></div>
+            <button class="vsl-play" type="button" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+          <div class="testi-featured-body">
+            <h3 class="testi-featured-name">Kyle</h3>
+            <p class="testi-featured-tag">Client</p>
+            <p class="testi-featured-story">Kyle's story goes here — send me the final copy (his full name, what you worked on together, and the outcome) and I'll drop it in.</p>
+            <p class="testi-featured-result">Result headline</p>
+          </div>
+        </article>
+
+        <article class="testi-featured reveal" style="--reveal-i:1">
           <div class="testi-video testi-video-vertical" role="button" tabindex="0" aria-label="Play testimonial video from Josh Macin">
             <video src="/assets/testimonial-josh-macin.mp4" playsinline preload="metadata"></video>
             <div class="testi-video-poster" aria-hidden="true"><div class="placeholder"><div class="placeholder-label">testimonial-josh-macin.mp4</div></div></div>
@@ -109,7 +122,7 @@
           </div>
         </article>
 
-        <article class="testi-featured reveal" style="--reveal-i:1">
+        <article class="testi-featured reveal" style="--reveal-i:2">
           <div class="testi-video testi-video-vertical" role="button" tabindex="0" aria-label="Play testimonial video from Matt Komo">
             <video src="/assets/testimonial-matt-komo.mp4" playsinline preload="metadata"></video>
             <div class="testi-video-poster" aria-hidden="true"><div class="placeholder"><div class="placeholder-label">testimonial-matt-komo.mp4</div></div></div>
@@ -153,43 +166,6 @@
     <div class="names-list reveal" id="names-list" style="--reveal-i:1"></div>
   </section>
 
-  <!-- Booking calendar -->
-  <section class="section" id="book" aria-labelledby="book-title">
-    <p class="section-kicker reveal">Let's talk</p>
-    <h2 class="section-title reveal" style="--reveal-i:1" id="book-title">SCHEDULE A ZOOM CALL</h2>
-    <div class="booking">
-      <div class="booking-panel reveal" style="--reveal-i:2">
-        <div class="cal-head">
-          <span class="cal-month" id="cal-month" aria-live="polite">Month</span>
-          <div class="cal-nav">
-            <button class="testi-btn" id="cal-prev" aria-label="Previous month">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <button class="testi-btn" id="cal-next" aria-label="Next month">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5 2l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="cal-grid" id="cal-grid" role="grid" aria-label="Choose a date for your call"></div>
-      </div>
-      <div class="booking-panel reveal" style="--reveal-i:3">
-        <p class="slots-title" id="slots-title">Pick a time <span id="slots-tz">(Arizona time)</span></p>
-        <p class="booking-hint" id="slots-hint">Select a date first — calls are Monday to Friday, 30 minutes.</p>
-        <div class="slots-grid" id="slots-grid" role="listbox" aria-labelledby="slots-title"></div>
-        <form class="form" id="book-form" hidden>
-          <label class="visually-hidden" for="book-name" hidden>Your name</label>
-          <input class="form-input" id="book-name" type="text" name="name" placeholder="Your name" autocomplete="name" required>
-          <label class="visually-hidden" for="book-email" hidden>Your email</label>
-          <input class="form-input" id="book-email" type="email" name="email" placeholder="Your best email" autocomplete="email" required>
-          <label class="visually-hidden" for="book-notes" hidden>What would you like to cover?</label>
-          <textarea class="form-textarea" id="book-notes" name="notes" placeholder="What would you like to cover on the call? (optional)"></textarea>
-          <button class="form-btn" type="submit">Book the call</button>
-        </form>
-        <p class="form-msg" id="book-msg" role="status" aria-live="polite"></p>
-      </div>
-    </div>
-  </section>
-
   <!-- Contact -->
   <section class="section" id="contact" aria-labelledby="contact-title">
     <p class="section-kicker reveal">Questions, projects, anything</p>
@@ -220,7 +196,7 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-logo">
-      <img src="/assets/cameron-logo.png" alt="Cameron Cruz" loading="lazy">
+      <img src="/assets/cameron-logo.png" alt="Cameron Cruz" loading="lazy" onerror="this.style.display='none'">
     </div>
     <nav class="footer-links" aria-label="Legal">
       <a href="/privacy-policy">Privacy Policy</a>

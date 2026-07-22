@@ -148,11 +148,28 @@
   });
 
   /* ============================================================
-     Render: trusted-by names
+     Render: trusted-by names (photo + dash + name)
+     Photos live at /assets/names/<slug>.jpg, e.g. "Dr. Daniel Pompa"
+     → /assets/names/dr-daniel-pompa.jpg. Missing photos fall back
+     to a subtle blank circle.
      ============================================================ */
+  function nameSlug(n) {
+    return n.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
   var namesList = document.getElementById('names-list');
   NAMES.forEach(function (n) {
-    namesList.appendChild(el('span', 'name', n));
+    var row = el('span', 'name');
+    var photo = el('span', 'name-photo');
+    var img = document.createElement('img');
+    img.src = '/assets/names/' + nameSlug(n) + '.jpg';
+    img.alt = '';
+    img.loading = 'lazy';
+    img.onerror = function () { img.remove(); };
+    photo.appendChild(img);
+    row.appendChild(photo);
+    row.appendChild(el('span', 'name-dash', '—'));
+    row.appendChild(el('span', 'name-label', n));
+    namesList.appendChild(row);
   });
 
   /* ============================================================
@@ -247,193 +264,6 @@
     rejectBtn.addEventListener('click', function () { choose('rejected-non-essential'); });
     banner.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') choose('rejected-non-essential');
-    });
-  })();
-
-  /* ============================================================
-     Booking calendar
-     ============================================================ */
-  (function booking() {
-    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    var DOWS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-
-    var calMonthEl = document.getElementById('cal-month');
-    var calGrid = document.getElementById('cal-grid');
-    var slotsGrid = document.getElementById('slots-grid');
-    var slotsHint = document.getElementById('slots-hint');
-    var form = document.getElementById('book-form');
-    var msg = document.getElementById('book-msg');
-
-    var today = new Date();
-    var view = { y: today.getFullYear(), m: today.getMonth() };
-    var selectedDate = null;
-    var selectedTime = null;
-    var slotTimes = [];
-    var bookedByDate = {}; // 'YYYY-MM-DD' -> Set of times
-
-    function pad(n) { return n < 10 ? '0' + n : String(n); }
-    function ymKey() { return view.y + '-' + pad(view.m + 1); }
-
-    function fetchAvailability() {
-      return fetch('/api/availability?month=' + ymKey())
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (!data.ok) return;
-          slotTimes = data.slotTimes || [];
-          bookedByDate = {};
-          (data.booked || []).forEach(function (b) {
-            if (!bookedByDate[b.slot_date]) bookedByDate[b.slot_date] = {};
-            bookedByDate[b.slot_date][b.slot_time] = true;
-          });
-        })
-        .catch(function () { /* offline / local preview — leave slots open */
-          if (!slotTimes.length) slotTimes = ['09:00', '09:30', '10:00', '10:30', '11:00', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
-        });
-    }
-
-    function renderCalendar() {
-      calMonthEl.textContent = MONTHS[view.m] + ' ' + view.y;
-      calGrid.innerHTML = '';
-      DOWS.forEach(function (d) {
-        var c = el('div', 'cal-dow', d);
-        c.setAttribute('role', 'columnheader');
-        calGrid.appendChild(c);
-      });
-
-      var first = new Date(view.y, view.m, 1);
-      var startPad = first.getDay();
-      var daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
-      var todayStr = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
-
-      for (var i = 0; i < startPad; i++) {
-        var blank = el('button', 'cal-day is-other');
-        blank.disabled = true;
-        blank.tabIndex = -1;
-        calGrid.appendChild(blank);
-      }
-      for (var d = 1; d <= daysInMonth; d++) {
-        (function (d) {
-          var dateStr = view.y + '-' + pad(view.m + 1) + '-' + pad(d);
-          var dow = new Date(view.y, view.m, d).getDay();
-          var btn = el('button', 'cal-day', String(d));
-          btn.type = 'button';
-          var isPastOrToday = dateStr <= todayStr;
-          var isWeekend = dow === 0 || dow === 6;
-          if (isPastOrToday || isWeekend) {
-            btn.disabled = true;
-          } else {
-            btn.setAttribute('aria-label', 'Choose ' + MONTHS[view.m] + ' ' + d + ', ' + view.y);
-            if (dateStr === selectedDate) {
-              btn.classList.add('is-selected');
-              btn.setAttribute('aria-pressed', 'true');
-            }
-            btn.addEventListener('click', function () {
-              selectedDate = dateStr;
-              selectedTime = null;
-              renderCalendar();
-              renderSlots();
-            });
-          }
-          calGrid.appendChild(btn);
-        })(d);
-      }
-    }
-
-    function renderSlots() {
-      slotsGrid.innerHTML = '';
-      if (!selectedDate) {
-        slotsHint.textContent = 'Select a date first — calls are Monday to Friday, 30 minutes.';
-        form.hidden = true;
-        return;
-      }
-      var d = new Date(selectedDate + 'T12:00:00');
-      slotsHint.textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-      var booked = bookedByDate[selectedDate] || {};
-      slotTimes.forEach(function (t) {
-        var btn = el('button', 'slot-btn', formatTime(t));
-        btn.type = 'button';
-        btn.setAttribute('role', 'option');
-        if (booked[t]) {
-          btn.disabled = true;
-          btn.setAttribute('aria-label', formatTime(t) + ' — unavailable');
-        } else {
-          btn.setAttribute('aria-label', 'Choose ' + formatTime(t));
-          if (t === selectedTime) {
-            btn.classList.add('is-selected');
-            btn.setAttribute('aria-selected', 'true');
-          }
-          btn.addEventListener('click', function () {
-            selectedTime = t;
-            renderSlots();
-            form.hidden = false;
-            document.getElementById('book-name').focus();
-          });
-        }
-        slotsGrid.appendChild(btn);
-      });
-      form.hidden = !selectedTime;
-    }
-
-    function formatTime(t) {
-      var parts = t.split(':');
-      var h = parseInt(parts[0], 10);
-      var ampm = h >= 12 ? 'PM' : 'AM';
-      var h12 = h % 12 === 0 ? 12 : h % 12;
-      return h12 + ':' + parts[1] + ' ' + ampm;
-    }
-
-    document.getElementById('cal-prev').addEventListener('click', function () {
-      view.m--;
-      if (view.m < 0) { view.m = 11; view.y--; }
-      fetchAvailability().then(renderCalendar);
-    });
-    document.getElementById('cal-next').addEventListener('click', function () {
-      view.m++;
-      if (view.m > 11) { view.m = 0; view.y++; }
-      fetchAvailability().then(renderCalendar);
-    });
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (!selectedDate || !selectedTime) return;
-      var btn = form.querySelector('button[type=submit]');
-      btn.disabled = true;
-      msg.className = 'form-msg';
-      msg.textContent = '';
-      fetch('/api/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name.value,
-          email: form.email.value,
-          notes: form.notes.value,
-          date: selectedDate,
-          time: selectedTime
-        })
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.ok) {
-            msg.className = 'form-msg ok';
-            msg.textContent = "You're booked. Check your inbox for confirmation — the Zoom link follows shortly.";
-            form.reset();
-            form.hidden = true;
-            selectedTime = null;
-            return fetchAvailability().then(function () { renderCalendar(); renderSlots(); });
-          }
-          msg.className = 'form-msg err';
-          msg.textContent = data.error || 'Something went wrong. Please try again.';
-        })
-        .catch(function () {
-          msg.className = 'form-msg err';
-          msg.textContent = 'Network error. Please try again.';
-        })
-        .then(function () { btn.disabled = false; });
-    });
-
-    fetchAvailability().then(function () {
-      renderCalendar();
-      renderSlots();
     });
   })();
 
