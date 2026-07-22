@@ -15,12 +15,6 @@
     { name: 'Adam Horwitz', tag: 'Info-product Operator', story: 'Adam has been in the game for a long time and is careful about who he hands his list to. We worked on a handful of promotions together — emails, sales pages, campaign strategy — and consistently produced numbers he could actually stand behind, not just vanity metrics.', result: 'Multi-promotion partner', photo: 'profile-horwitz.jpg' }
   ];
 
-  var STUDENTS = [
-    { name: 'Student Name 1', tag: 'Copy Accelerator Student', story: 'Went from writing emails for free to landing a $4k/mo retainer client within eight weeks of joining the program.', result: 'First $4k/mo client', file: 'student-testimonial-1.mp4' },
-    { name: 'Student Name 2', tag: 'Course Student', story: 'Used the offer-building framework to relaunch a stalled course — tripled conversions on the same traffic.', result: '3× conversions', file: 'student-testimonial-2.mp4' },
-    { name: 'Student Name 3', tag: 'Coaching Student', story: 'Left a 9-to-5 after six months of freelance copywriting using the client-acquisition system from the program.', result: 'Full-time freelancer', file: 'student-testimonial-3.mp4' }
-  ];
-
   var NAMES = [
     'Eva Hooft', 'Joshua Macin', 'Dr. Daniel Pompa', 'Dr. John Demartini',
     'Marie & Jake Snow', 'Dennis Echelbarger', 'Matt Proper', 'AwesomeREI',
@@ -38,6 +32,13 @@
     return node;
   }
 
+  function initialsOf(name) {
+    var words = name.replace(/[^A-Za-z0-9& ]/g, '').split(/[\s&]+/).filter(Boolean);
+    var first = words[0] ? words[0][0] : '';
+    var second = words[1] ? words[1][0] : '';
+    return (first + second).toUpperCase();
+  }
+
   /* ============================================================
      Render: testimonial rail
      ============================================================ */
@@ -51,8 +52,7 @@
     img.loading = 'lazy';
     img.onerror = function () {
       portrait.innerHTML = '';
-      var ph = el('div', 'placeholder');
-      portrait.appendChild(ph);
+      portrait.appendChild(el('span', 'initials', initialsOf(t.name)));
     };
     portrait.appendChild(img);
     var body = el('div', 'testi-small-body');
@@ -94,47 +94,6 @@
   updateRailButtons();
 
   /* ============================================================
-     Render: student testimonials
-     ============================================================ */
-  var studentsGrid = document.getElementById('students-grid');
-  STUDENTS.forEach(function (t, i) {
-    var card = el('article', 'student-card reveal');
-    card.style.setProperty('--reveal-i', String(i));
-
-    var vid = el('div', 'testi-video');
-    vid.setAttribute('role', 'button');
-    vid.setAttribute('tabindex', '0');
-    vid.setAttribute('aria-label', 'Play testimonial video from ' + t.name);
-    var video = document.createElement('video');
-    video.src = '/assets/' + t.file;
-    video.playsInline = true;
-    video.preload = 'metadata';
-    vid.appendChild(video);
-    var poster = el('div', 'testi-video-poster');
-    poster.setAttribute('aria-hidden', 'true');
-    var ph = el('div', 'placeholder');
-    ph.appendChild(el('div', 'placeholder-label', t.file));
-    poster.appendChild(ph);
-    vid.appendChild(poster);
-    var play = el('button', 'vsl-play');
-    play.type = 'button';
-    play.tabIndex = -1;
-    play.setAttribute('aria-hidden', 'true');
-    play.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-    vid.appendChild(play);
-    card.appendChild(vid);
-
-    var body = el('div', 'student-body');
-    body.appendChild(el('h4', 'testi-small-name', t.name));
-    body.appendChild(el('p', 'testi-small-tag', t.tag));
-    body.appendChild(el('p', 'testi-small-story', t.story));
-    body.appendChild(el('p', 'testi-small-result', t.result));
-    card.appendChild(body);
-
-    studentsGrid.appendChild(card);
-  });
-
-  /* ============================================================
      Graceful placeholders for not-yet-uploaded images
      ============================================================ */
   document.querySelectorAll('.bio-photo img, .footer-logo img').forEach(function (img) {
@@ -164,7 +123,10 @@
     img.src = '/assets/names/' + nameSlug(n) + '.jpg';
     img.alt = '';
     img.loading = 'lazy';
-    img.onerror = function () { img.remove(); };
+    img.onerror = function () {
+      photo.innerHTML = '';
+      photo.appendChild(el('span', 'initials', initialsOf(n)));
+    };
     photo.appendChild(img);
     row.appendChild(photo);
     row.appendChild(el('span', 'name-dash', '—'));
@@ -175,40 +137,93 @@
   /* ============================================================
      Video players (hero VSL + all testimonial videos)
      ============================================================ */
+  // Two modes per video:
+  //  - preview: muted, looping, auto-starts on hover or when scrolled into
+  //    view, pauses when the pointer leaves or it scrolls away
+  //  - engaged: user clicked — sound on, native controls, previews elsewhere stop
   function wireVideo(container) {
     var video = container.querySelector('video');
     if (!video) return;
-    function toggle() {
-      if (video.paused) {
-        // Pause any other playing video first
-        document.querySelectorAll('video').forEach(function (v) {
-          if (v !== video && !v.paused) v.pause();
-        });
-        video.play().then(function () {
-          container.classList.add('is-playing');
-          video.controls = true;
-        }).catch(function () {
-          container.classList.remove('is-playing');
-        });
-      } else {
-        video.pause();
-      }
+
+    // Show the video's own first frame instead of the striped placeholder
+    video.addEventListener('loadeddata', function () {
+      container.classList.add('has-frame');
+    });
+    if (video.readyState >= 2) container.classList.add('has-frame');
+
+    function startPreview() {
+      if (container.classList.contains('is-playing')) return;
+      if (document.querySelector('.is-playing')) return; // don't compete with an engaged video
+      video.muted = true;
+      video.loop = true;
+      video.play().then(function () {
+        container.classList.add('is-previewing');
+      }).catch(function () { /* not loaded yet / autoplay blocked */ });
     }
+
+    function stopPreview() {
+      if (container.classList.contains('is-playing')) return;
+      video.pause();
+      container.classList.remove('is-previewing');
+    }
+
+    function engage() {
+      document.querySelectorAll('.vsl, .testi-video').forEach(function (c) {
+        if (c === container) return;
+        var v = c.querySelector('video');
+        if (v && !v.paused) v.pause();
+        c.classList.remove('is-playing', 'is-previewing');
+        if (v) v.controls = false;
+      });
+      video.muted = false;
+      video.loop = false;
+      video.currentTime = 0;
+      video.play().then(function () {
+        container.classList.remove('is-previewing');
+        container.classList.add('is-playing');
+        video.controls = true;
+      }).catch(function () {
+        container.classList.remove('is-playing');
+      });
+    }
+
+    container.addEventListener('mouseenter', startPreview);
+    container.addEventListener('mouseleave', stopPreview);
+
     container.addEventListener('click', function (e) {
       if (container.classList.contains('is-playing')) return; // native controls take over
       e.preventDefault();
-      toggle();
+      engage();
     });
     container.addEventListener('keydown', function (e) {
       if ((e.key === 'Enter' || e.key === ' ') && !container.classList.contains('is-playing')) {
         e.preventDefault();
-        toggle();
+        engage();
       }
     });
     video.addEventListener('ended', function () {
       container.classList.remove('is-playing');
       video.controls = false;
     });
+
+    // Auto-start (muted) while scrolled into view, stop when scrolled away
+    if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var vio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) startPreview();
+          else {
+            if (container.classList.contains('is-playing')) {
+              video.pause(); // engaged video also stops when scrolled away
+              container.classList.remove('is-playing');
+              video.controls = false;
+            } else {
+              stopPreview();
+            }
+          }
+        });
+      }, { threshold: 0.55 });
+      vio.observe(container);
+    }
   }
   document.querySelectorAll('.vsl, .testi-video').forEach(wireVideo);
 

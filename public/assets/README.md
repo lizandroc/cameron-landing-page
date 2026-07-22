@@ -6,13 +6,11 @@ Drop the real files in this folder with these exact names (the site references t
 | File | Used for |
 |------|----------|
 | `vsl-main.mp4` | Hero welcome video (16:9) |
-| `vsl-poster.jpg` | Poster frame for the hero video |
-| `testimonial-kyle.mp4` | Kyle featured testimonial — first card (vertical 9:16) |
+| `testimonial-kyle.mp4` | Kyle Peche featured testimonial — first card (vertical 9:16) |
 | `testimonial-josh-macin.mp4` | Josh Macin featured testimonial (vertical 9:16) |
 | `testimonial-matt-komo.mp4` | Matt Komo featured testimonial (vertical 9:16) |
-| `student-testimonial-1.mp4` | Student wins card 1 (vertical 9:16) |
-| `student-testimonial-2.mp4` | Student wins card 2 (vertical 9:16) |
-| `student-testimonial-3.mp4` | Student wins card 3 (vertical 9:16) |
+
+Videos use their own first frame as the preview image — no separate poster files needed.
 
 ## Images
 | File | Used for |
