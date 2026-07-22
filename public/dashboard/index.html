@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — Cameron Cruz</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<style>
+  .dash { max-width: 1080px; margin: 0 auto; padding: 48px 24px 96px; }
+  .dash-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 36px;
+    border-bottom: 1px solid var(--rule); padding-bottom: 20px;
+  }
+  .dash-title { font-family: var(--display); font-size: 28px; font-weight: 700; text-transform: uppercase; letter-spacing: -0.01em; margin: 0; }
+  .dash-sub { color: var(--fg-3); font-size: 13px; }
+  .dash-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--bg-2); border: 1px solid var(--rule); border-radius: 3px; padding: 24px; }
+  .panel-title { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-3); margin: 0 0 18px; }
+  .cal-day { position: relative; }
+  .cal-day .dot {
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--gold);
+  }
+  .cal-day.has-bookings { color: var(--fg); font-weight: 600; }
+  .day-list { margin-top: 20px; border-top: 1px solid var(--rule); padding-top: 16px; }
+  .bk {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 14px; border: 1px solid var(--rule); border-radius: 3px;
+    margin-bottom: 10px; background: var(--bg);
+  }
+  .bk-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .bk-name { font-family: var(--display); font-weight: 700; font-size: 15px; }
+  .bk-time { color: var(--gold); font-weight: 700; font-size: 13px; }
+  .bk-email { color: var(--fg-2); font-size: 13px; }
+  .bk-notes { color: var(--fg-2); font-size: 13px; white-space: pre-wrap; margin-top: 4px; }
+  .bk-status { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; border: 1px solid var(--rule); }
+  .bk-status.pending { color: #D9B85B; border-color: #4a3f22; }
+  .bk-status.confirmed { color: #7BC47F; border-color: #24402a; }
+  .bk-status.cancelled { color: var(--fg-3); text-decoration: line-through; }
+  .bk-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+  .bk-actions .form-input { padding: 8px 10px; font-size: 13px; flex: 1 1 180px; }
+  .mini-btn {
+    font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
+    text-transform: uppercase; padding: 8px 12px; border-radius: 3px; cursor: pointer;
+    background: var(--bg-3); color: var(--fg-2); border: 1px solid var(--rule); transition: all 0.15s;
+  }
+  .mini-btn:hover { color: var(--fg); border-color: var(--fg-3); }
+  .mini-btn.gold { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+  .contacts-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .contacts-table th {
+    text-align: left; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--fg-3); padding: 8px 10px; border-bottom: 1px solid var(--rule); font-weight: 600;
+  }
+  .contacts-table td { padding: 10px; border-bottom: 1px solid var(--rule); color: var(--fg-2); vertical-align: top; }
+  .contacts-table td:first-child { color: var(--fg); font-weight: 600; white-space: nowrap; }
+  .tag-src { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--rule); border-radius: 2px; color: var(--fg-3); }
+  .login-wrap { max-width: 380px; margin: 120px auto; }
+  .empty { color: var(--fg-3); font-size: 14px; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<div id="login" class="login-wrap panel" hidden>
+  <p class="panel-title">Dashboard access</p>
+  <form class="form" id="login-form">
+    <input class="form-input" type="password" id="admin-key" placeholder="Admin key" autocomplete="current-password" required aria-label="Admin key">
+    <button class="form-btn" type="submit">Enter</button>
+  </form>
+  <p class="form-msg err" id="login-msg" role="alert"></p>
+</div>
+
+<div id="dash" class="dash" hidden>
+  <div class="dash-head">
+    <h1 class="dash-title">Dashboard</h1>
+    <div>
+      <span class="dash-sub" id="dash-stats"></span>
+      &nbsp;·&nbsp;
+      <a class="dash-sub" href="/" style="color:var(--fg-3);">View site</a>
+      &nbsp;·&nbsp;
+      <button class="mini-btn" id="logout" type="button">Log out</button>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- Calendar panel -->
+    <div class="panel">
+      <p class="panel-title">Scheduled calls</p>
+      <div class="cal-head">
+        <span class="cal-month" id="cal-month" aria-live="polite"></span>
+        <div class="cal-nav">
+          <button class="testi-btn" id="cal-prev" aria-label="Previous month">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="testi-btn" id="cal-next" aria-label="Next month">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5 2l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="day-list" id="day-list">
+        <p class="empty">Select a highlighted day to see its calls — or scroll the list of upcoming calls below.</p>
+      </div>
+    </div>
+
+    <!-- Contacts panel -->
+    <div class="panel">
+      <p class="panel-title">Contacts</p>
+      <div class="filter-row" id="contact-filters">
+        <button class="mini-btn gold" data-src="all" type="button">All</button>
+        <button class="mini-btn" data-src="contact" type="button">Messages</button>
+        <button class="mini-btn" data-src="booking" type="button">Bookings</button>
+        <button class="mini-btn" data-src="newsletter" type="button">Newsletter</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="contacts-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Source</th><th>When</th></tr></thead>
+          <tbody id="contacts-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'cc-admin-key';
+  var adminKey = sessionStorage.getItem(KEY) || '';
+  var loginEl = document.getElementById('login');
+  var dashEl = document.getElementById('dash');
+  var bookings = [];
+  var contacts = [];
+  var contactFilter = 'all';
+  var view, selectedDate = null;
+  var today = new Date();
+  view = { y: today.getFullYear(), m: today.getMonth() };
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var DOWS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers, { Authorization: 'Bearer ' + adminKey });
+    return fetch(path, opts).then(function (r) {
+      if (r.status === 401) { logout(); throw new Error('unauthorized'); }
+      return r.json();
+    });
+  }
+
+  function logout() {
+    sessionStorage.removeItem(KEY);
+    adminKey = '';
+    dashEl.hidden = true;
+    loginEl.hidden = false;
+  }
+
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+  function fmtWhen(iso) {
+    var d = new Date(iso.replace(' ', 'T') + 'Z');
+    return isNaN(d) ? iso : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function fmtTime(t) {
+    var p = t.split(':'); var h = parseInt(p[0], 10);
+    return (h % 12 === 0 ? 12 : h % 12) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM');
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function load() {
+    return Promise.all([api('/api/admin/bookings'), api('/api/admin/contacts')]).then(function (res) {
+      bookings = (res[0].bookings) || [];
+      contacts = (res[1].contacts) || [];
+      loginEl.hidden = true;
+      dashEl.hidden = false;
+      var upcoming = bookings.filter(function (b) { return b.status !== 'cancelled' && b.slot_date >= new Date().toISOString().slice(0, 10); });
+      document.getElementById('dash-stats').textContent = upcoming.length + ' upcoming call' + (upcoming.length === 1 ? '' : 's') + ' · ' + contacts.length + ' contacts';
+      renderCalendar();
+      renderDayList();
+      renderContacts();
+    });
+  }
+
+  function bookingsOn(dateStr) {
+    return bookings.filter(function (b) { return b.slot_date === dateStr; });
+  }
+
+  function renderCalendar() {
+    document.getElementById('cal-month').textContent = MONTHS[view.m] + ' ' + view.y;
+    var grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+    DOWS.forEach(function (d) {
+      var c = document.createElement('div');
+      c.className = 'cal-dow'; c.textContent = d;
+      grid.appendChild(c);
+    });
+    var startPad = new Date(view.y, view.m, 1).getDay();
+    var days = new Date(view.y, view.m + 1, 0).getDate();
+    for (var i = 0; i < startPad; i++) {
+      var blank = document.createElement('button');
+      blank.className = 'cal-day is-other'; blank.disabled = true; blank.tabIndex = -1;
+      grid.appendChild(blank);
+    }
+    for (var d = 1; d <= days; d++) {
+      (function (d) {
+        var dateStr = view.y + '-' + pad(view.m + 1) + '-' + pad(d);
+        var dayBookings = bookingsOn(dateStr).filter(function (b) { return b.status !== 'cancelled'; });
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-day' + (dayBookings.length ? ' has-bookings' : '') + (dateStr === selectedDate ? ' is-selected' : '');
+        btn.textContent = d;
+        btn.setAttribute('aria-label', MONTHS[view.m] + ' ' + d + (dayBookings.length ? ', ' + dayBookings.length + ' call(s)' : ', no calls'));
+        if (dayBookings.length) {
+          var dot = document.createElement('span'); dot.className = 'dot'; btn.appendChild(dot);
+        }
+        btn.addEventListener('click', function () {
+          selectedDate = dateStr === selectedDate ? null : dateStr;
+          renderCalendar(); renderDayList();
+        });
+        grid.appendChild(btn);
+      })(d);
+    }
+  }
+
+  function bkCard(b) {
+    var wrap = document.createElement('div');
+    wrap.className = 'bk';
+    var prettyDate = new Date(b.slot_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    wrap.innerHTML =
+      '<div class="bk-top"><span class="bk-name">' + esc(b.name) + '</span>' +
+      '<span class="bk-time">' + prettyDate + ' · ' + fmtTime(b.slot_time) + '</span></div>' +
+      '<div class="bk-top"><a class="bk-email" href="mailto:' + esc(b.email) + '">' + esc(b.email) + '</a>' +
+      '<span class="bk-status ' + esc(b.status) + '">' + esc(b.status) + '</span></div>' +
+      (b.notes ? '<div class="bk-notes">' + esc(b.notes) + '</div>' : '');
+    var actions = document.createElement('div');
+    actions.className = 'bk-actions';
+    if (b.status !== 'cancelled') {
+      var zoomInput = document.createElement('input');
+      zoomInput.className = 'form-input';
+      zoomInput.placeholder = 'Zoom link…';
+      zoomInput.value = b.zoom_link || '';
+      zoomInput.setAttribute('aria-label', 'Zoom link for ' + b.name);
+      actions.appendChild(zoomInput);
+      var confirmBtn = document.createElement('button');
+      confirmBtn.className = 'mini-btn gold'; confirmBtn.type = 'button';
+      confirmBtn.textContent = b.status === 'confirmed' ? 'Resend link' : 'Confirm + send link';
+      confirmBtn.addEventListener('click', function () {
+        setStatus(b.id, 'confirmed', zoomInput.value.trim(), confirmBtn);
+      });
+      actions.appendChild(confirmBtn);
+      var cancelBtn = document.createElement('button');
+      cancelBtn.className = 'mini-btn'; cancelBtn.type = 'button'; cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function () {
+        if (confirm('Cancel this booking?')) setStatus(b.id, 'cancelled', '', cancelBtn);
+      });
+      actions.appendChild(cancelBtn);
+    }
+    wrap.appendChild(actions);
+    return wrap;
+  }
+
+  function setStatus(id, status, zoomLink, btn) {
+    btn.disabled = true;
+    api('/api/admin/booking-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, status: status, zoom_link: zoomLink })
+    }).then(load).catch(function () { btn.disabled = false; });
+  }
+
+  function renderDayList() {
+    var list = document.getElementById('day-list');
+    list.innerHTML = '';
+    var items;
+    var title = document.createElement('p');
+    title.className = 'panel-title';
+    if (selectedDate) {
+      items = bookingsOn(selectedDate);
+      title.textContent = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    } else {
+      var todayStr = new Date().toISOString().slice(0, 10);
+      items = bookings.filter(function (b) { return b.slot_date >= todayStr && b.status !== 'cancelled'; })
+        .sort(function (a, b) { return (a.slot_date + a.slot_time).localeCompare(b.slot_date + b.slot_time); });
+      title.textContent = 'Upcoming calls';
+    }
+    list.appendChild(title);
+    if (!items.length) {
+      var p = document.createElement('p'); p.className = 'empty'; p.textContent = 'No calls here yet.';
+      list.appendChild(p);
+      return;
+    }
+    items.forEach(function (b) { list.appendChild(bkCard(b)); });
+  }
+
+  function renderContacts() {
+    var body = document.getElementById('contacts-body');
+    body.innerHTML = '';
+    var rows = contacts.filter(function (c) { return contactFilter === 'all' || c.source === contactFilter; });
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="4" class="empty">No contacts yet.</td></tr>';
+      return;
+    }
+    rows.forEach(function (c) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + esc(c.name) + '</td>' +
+        '<td><a class="bk-email" href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' +
+        (c.message ? '<div class="bk-notes">' + esc(c.message) + '</div>' : '') + '</td>' +
+        '<td><span class="tag-src">' + esc(c.source) + '</span></td>' +
+        '<td style="white-space:nowrap;">' + esc(fmtWhen(c.created_at)) + '</td>';
+      body.appendChild(tr);
+    });
+  }
+
+  document.getElementById('contact-filters').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-src]');
+    if (!btn) return;
+    contactFilter = btn.dataset.src;
+    this.querySelectorAll('button').forEach(function (b) { b.classList.toggle('gold', b === btn); });
+    renderContacts();
+  });
+
+  document.getElementById('cal-prev').addEventListener('click', function () {
+    view.m--; if (view.m < 0) { view.m = 11; view.y--; }
+    selectedDate = null; renderCalendar(); renderDayList();
+  });
+  document.getElementById('cal-next').addEventListener('click', function () {
+    view.m++; if (view.m > 11) { view.m = 0; view.y++; }
+    selectedDate = null; renderCalendar(); renderDayList();
+  });
+
+  document.getElementById('logout').addEventListener('click', logout);
+
+  document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    adminKey = document.getElementById('admin-key').value.trim();
+    document.getElementById('login-msg').textContent = '';
+    load().then(function () {
+      sessionStorage.setItem(KEY, adminKey);
+    }).catch(function () {
+      document.getElementById('login-msg').textContent = 'Wrong key — try again.';
+    });
+  });
+
+  if (adminKey) {
+    load().catch(function () { logout(); });
+  } else {
+    loginEl.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>

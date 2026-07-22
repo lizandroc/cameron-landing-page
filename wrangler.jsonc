@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cameron-landing-page",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cameron-landing",
+      "database_id": "58aa0509-41a0-4d7c-af77-be19359a4adf"
+    }
+  ],
+  "vars": {
+    // Where booking/contact notifications are sent
+    "NOTIFY_EMAIL": "cameron@cameroncruz.com",
+    // The "from" address for Resend (must be a verified domain in Resend)
+    "FROM_EMAIL": "Cameron Cruz <noreply@cameroncruz.com>",
+    "TIMEZONE_LABEL": "Arizona time (MST)"
+  }
+  // Secrets (set via: npx wrangler secret put <NAME>):
+  //   RESEND_API_KEY  - your Resend API key
+  //   ADMIN_KEY       - password for the /dashboard
+}
